@@ -16,18 +16,31 @@ function goTurtle() {
 	push();
 	turtle.reset();
 	let code = editor.value();
-	let tokens = code.split(' ');
-	let index = 0;
-	while (index < tokens.length) {
-		let token = tokens[index];
-		if (commands[token]) {
-			if (token.charAt(0) === 'p') {
-				commands[token]();
+	
+	/* This is pretty bad. 
+	 * But it works somehow
+	*/
+	let tokens = code.match(/(repeat [0-9]+ \[.*\])|(pu)|(pd)|([a-z]+\ [0-9]+)/gi);
+
+	if (tokens !== null) {
+		for (let token of tokens) {
+			if (token.includes('repeat')) {
+				let repeats = token.match(/[0-9]+/)[0];
+
+				for (let i = 1; i <= repeats; i++) {
+					let values = token.match(/(pu)|(pd)|(([^repeat][a-z])+\ [0-9]+)/gi);
+					
+					for (let value of values) interpret(value);
+				}
 			} else {
-				commands[token](tokens[++index]);
+				interpret(token);
 			}
 		}
-		index++;
 	}
 	pop();
+}
+
+function interpret(command) {
+	let values = command.split(" ");
+	commands[values[0]](values[1] !== null ? values[1] : null);
 }
