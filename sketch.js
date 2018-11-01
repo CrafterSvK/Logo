@@ -16,31 +16,25 @@ function goTurtle() {
 	push();
 	turtle.reset();
 	let code = editor.value();
-	
-	/* This is pretty bad. 
-	 * But it works somehow
-	*/
 	let tokens = code.match(/(repeat [0-9]+ \[.*\])|(pu)|(pd)|([a-z]+\ [0-9]+)/gi);
 
-	if (tokens !== null) {
-		for (let token of tokens) {
-			if (token.includes('repeat')) {
-				let repeats = token.match(/[0-9]+/)[0];
-
-				for (let i = 1; i <= repeats; i++) {
-					let values = token.match(/(pu)|(pd)|(([^repeat][a-z])+\ [0-9]+)/gi);
-					
-					for (let value of values) interpret(value);
-				}
-			} else {
-				interpret(token);
-			}
-		}
-	}
+	if (tokens !== null) for (let token of tokens) interpret(token);
+	
 	pop();
 }
 
 function interpret(command) {
-	let values = command.split(" ");
-	commands[values[0]](values[1] !== null ? values[1] : null);
+	/* Cannot nest repeat in repeat. Needs better regex. */
+	if (command.includes('repeat')) {
+		let repeats = command.match(/[0-9]+/)[0];
+
+		for (let i = 1; i <= repeats; i++) {
+			let values = command.match(/(pu)|(pd)|(([^repeat][a-z])+\ [0-9]+)/gi);
+			
+			for (let value of values) interpret(value);
+		}
+	} else {
+		let values = command.split(" ");
+		commands[values[0]](values[1] !== null ? values[1] : null);
+	}
 }

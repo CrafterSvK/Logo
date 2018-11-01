@@ -1,22 +1,10 @@
 const commands = {
-  "fd": function (amt) {
-    turtle.forward(amt);
-  },
-  "bd": function (amt) {
-    turtle.forward(-amt);
-  },
-  "rt": function (angle) {
-    turtle.right(angle);
-  },
-  "lt": function (angle) {
-    turtle.right(-angle);
-  },
-  "pu": function () {
-    turtle.pen = false;
-  },
-  "pd": function () {
-    turtle.pen = true;
-  }
+  "fd": amt => turtle.forward(amt),
+  "bd": amt => turtle.forward(-amt),
+  "rt": angle => turtle.right(angle),
+  "lt": angle => turtle.right(-angle),
+  "pu": () => turtle.pen = false,
+  "pd": () => turtle.pen = true
 }
 
 class Turtle {
