@@ -15,12 +15,12 @@ function goTurtle() {
 	background(0);
 	push();
 	turtle.reset();
-	let code = editor.value();
-	start(code);
+	let code = editor.value().replace(/\s+/gmi, ' ');
+	sanitize(code);
 	pop();
 }
 
-function start(code) {
+function sanitize(code) {
 	/*
 	 * splits code into segments 
 	 * repeat command | pu | pd | command with random | command | color | special commands
@@ -29,7 +29,40 @@ function start(code) {
 		/(repeat (random \d+|\d+) \[.*\])|(pu)|(pd)|(color ((random \d+ )|\d+ ){2}((random \d+)|\d+))|(\w+\ random\ \d+)|([a-z]+\ \d+)|([a-z]+ [a-z]+)/gi
 	);
 
-	if (tokens !== null) for (let token of tokens) interpret(token);
+	console.log(tokens);
+	//Solves reccursion by counting brackets
+	let rtokens = new Array();
+	
+	if (tokens !== null) for (let token of tokens) {
+		if (token.match(/^(repeat)/) !== null) {
+			let bracket_pair = 0;
+			let i;
+
+			for (i = 0; i < token.length; i++) {
+				if (token.charAt(i) === '[') {
+					bracket_pair++;
+				} else if (token.charAt(i) === ']') {
+					bracket_pair--;
+
+					if (bracket_pair === 0)	break;
+				}
+			}
+
+			let first = token.substring(0, i + 1);
+			rtokens.push(first);
+
+			if (first.length < token.length) {
+				let second = token.substring(i + 1).trim();
+				rtokens.push(second);
+			}
+
+		} else {
+			rtokens.push(token);
+		}
+	}
+
+	//interpret sanitized output
+	if (rtokens !== null) for (let token of rtokens) interpret(token);
 }
 
 function interpret(command) {
@@ -39,9 +72,9 @@ function interpret(command) {
 		if (checkError(command, requirements)) return;
 
 		//get number of repeats
-		let repeats = command.match(/\d+/)[0];
+		let repeats = command.match(/\d+/m)[0];
 
-		if (command.match(/^repeat random \d+/)) {
+		if (command.match(/^repeat random \d+/i)) {
 			let number = command.match(/\d+/)[0];
 
 			let repeats = Math.floor(random(number));
@@ -49,7 +82,7 @@ function interpret(command) {
 		
 		//repeat code in brackets (Lookbehind not supported in JS) -> /(?<=\[).*(?=\])/
 		for (let i = 1; i <= repeats; i++) 
-			start(command.match(/(?=\[).*(?=\])/)[0].substring(1)); 
+			sanitize(command.match(/(?=\[).*(?=\])/i)[0].substring(1)); 
 	} else {
 		let com = command;
 
@@ -71,7 +104,7 @@ function interpret(command) {
 			values[1] !== null ? values[1] : null,
 			values[2] !== null ? values[2] : null,
 			values[3] !== null ? values[3] : null
-			);
+		);
 	}
 }
 
