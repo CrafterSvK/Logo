@@ -16,30 +16,33 @@ function goTurtle() {
 	push();
 	turtle.reset();
 	let code = editor.value();
-	let tokens = code.match(/(repeat [0-9]+ \[.*\])|(pu)|(pd)|([a-z]+\ [0-9]+)/gi);
+	start(code);
+	pop();
+}
+
+function start(code) {
+	//splits code into segments
+	let tokens = code.match(/(repeat (random \d+|\d+) \[.*\])|(pu)|(pd)|(\w+\ random\ \d+)|(\w+\ \d+)/gi);
 
 	if (tokens !== null) for (let token of tokens) interpret(token);
-	
-	pop();
 }
 
 function interpret(command) {
 	if (command.includes('repeat')) {
-		let repeats = command.match(/[0-9]+/)[0];
-
-		for (let i = 1; i <= repeats; i++) {
-			let com = command.match(/\[.*\]/)[0];
-
-			if (com.includes('repeat')) {
-				interpret(com.match(/[^[].*(?=])/)[0]);
-			} else {
-				let values = command.match(/(pu)|(pd)|(([^repeat][a-z])+\ [0-9]+)/gi);
-			
-				for (let value of values) interpret(value);
-			}
-		}
+		//get number of repeats
+		let number = command.match(/\d+/)[0];
+		let repeats = command.includes('random') ? random(number) : number; 
+		
+		//repeat code in brackets (Lookbehind not supported in JS) -> /(?<=\[).*(?=\])/
+		for (let i = 1; i <= repeats; i++) 
+			start(command.match(/(?=\[).*(?=\])/)[0].substring(1)); 
 	} else {
 		let values = command.split(" ");
+		
+		if (values[1].includes('random')) values[1] = random(values[2]);
+
+		//interpret the basic commands
+		console.log(values[0]);
 		commands[values[0]](values[1] !== null ? values[1] : null);
 	}
 }
