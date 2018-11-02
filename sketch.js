@@ -5,7 +5,7 @@ function setup() {
 	createCanvas(200, 200);
 	angleMode(DEGREES);
 	background(0);
-	turtle = new Turtle(100, 100, 0);
+	turtle = new Turtle(100, 100, 0, 'white');
 	editor = select('#code');
 	editor.input(goTurtle);
 	goTurtle();
@@ -21,28 +21,69 @@ function goTurtle() {
 }
 
 function start(code) {
-	//splits code into segments
-	let tokens = code.match(/(repeat (random \d+|\d+) \[.*\])|(pu)|(pd)|(\w+\ random\ \d+)|(\w+\ \d+)/gi);
+	/*
+	 * splits code into segments 
+	 * repeat command | pu | pd | command with random | command | color | special commands
+	*/
+	let tokens = code.match(
+		/(repeat (random \d+|\d+) \[.*\])|(pu)|(pd)|(color ((random \d+ )|\d+ ){2}((random \d+)|\d+))|(\w+\ random\ \d+)|([a-z]+\ \d+)|([a-z]+ [a-z]+)/gi
+	);
 
 	if (tokens !== null) for (let token of tokens) interpret(token);
 }
 
 function interpret(command) {
 	if (command.includes('repeat')) {
+		//Error handling
+		let requirements = ['[', ']'];
+		if (checkError(command, requirements)) return;
+
 		//get number of repeats
-		let number = command.match(/\d+/)[0];
-		let repeats = command.includes('random') ? random(number) : number; 
+		let repeats = command.match(/\d+/)[0];
+
+		if (command.match(/^repeat random \d+/)) {
+			let number = command.match(/\d+/)[0];
+
+			let repeats = Math.floor(random(number));
+		}
 		
 		//repeat code in brackets (Lookbehind not supported in JS) -> /(?<=\[).*(?=\])/
 		for (let i = 1; i <= repeats; i++) 
 			start(command.match(/(?=\[).*(?=\])/)[0].substring(1)); 
 	} else {
-		let values = command.split(" ");
+		let com = command;
+
+		if (com.includes('random')) {
+			let randoms = command.match(/(random \d+)/gi);
+
+			for (let ran of randoms) {
+				let val = ran.split(' ');
+				let number = Math.floor(random(val[1]));
+
+				com = com.replace(new RegExp(ran), number);
+			}
+		}
 		
-		if (values[1].includes('random')) values[1] = random(values[2]);
+		let values = com.split(' ');
 
 		//interpret the basic commands
-		console.log(values[0]);
-		commands[values[0]](values[1] !== null ? values[1] : null);
+		commands[values[0]](
+			values[1] !== null ? values[1] : null,
+			values[2] !== null ? values[2] : null,
+			values[3] !== null ? values[3] : null
+			);
 	}
+}
+
+//Simple not very useful error checking
+function checkError(command, characters) {
+	for (let char of characters) {
+		if (!command.includes(char)) {
+			console.error(`Missing '${char}' in '${command}'!`);
+
+			return true;
+		}
+	}
+
+	return false;
 }
